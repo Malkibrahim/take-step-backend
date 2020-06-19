@@ -29,42 +29,38 @@ router.get("/:id", authenticationMiddleware, async (req, res, next) => {
 });
 
 //---------------------------UpdateUser---------------------------//
-router.patch(
-  "/Edit/:id",
-  authenticationMiddleware,
-  async (req, res, next) => {
-    id = req.user.id;
-    const {
-      password,
-      firstName,
-      lastName,
-      country,
-      email,
-      jobTitle,
-      description,
-    } = req.body;
-    const user = await Volunteer.findByIdAndUpdate(
-      id,
-      {
-        $set: {
-          password,
-          firstName,
-          lastName,
-          country,
-          email,
-          jobTitle,
-          description,
-        },
+router.patch("/Edit/:id", authenticationMiddleware, async (req, res, next) => {
+  id = req.user.id;
+  const {
+    password,
+    firstName,
+    lastName,
+    country,
+    email,
+    jobTitle,
+    description,
+  } = req.body;
+  const user = await Volunteer.findByIdAndUpdate(
+    id,
+    {
+      $set: {
+        password,
+        firstName,
+        lastName,
+        country,
+        email,
+        jobTitle,
+        description,
       },
-      {
-        new: true,
-        runValidators: true,
-        omitUndefined: true,
-      }
-    ).populate("country");
-    res.status(200).json(user);
-  }
-);
+    },
+    {
+      new: true,
+      runValidators: true,
+      omitUndefined: true,
+    }
+  ).populate("country");
+  res.status(200).json(user);
+});
 ///-----------------------Register-----------------//
 router.post(
   "/register",
@@ -85,23 +81,22 @@ router.post(
       country,
       email,
     });
-    await  user.save(function(err) {
+    await user.save(function (err) {
       if (err) {
-        if (err.name=== 'MongoError' && err.code === 11000) {
-         
-          return res.status(422).send({ succes: false, message: ' email already exist!' });
+        if (err.name === "MongoError" && err.code === 11000) {
+          return res
+            .status(422)
+            .send({ succes: false, message: " email already exist!" });
         }
-  
-      
+
         return res.status(422).send(err);
       }
-  
+
       res.json({
-        success: true,user
+        success: true,
+        user,
       });
-  
     });
-   
   }
 );
 
@@ -299,7 +294,7 @@ router.patch(
   "/EditEducation/:volunteerId/:EduId",
   authenticationMiddleware,
   async (req, res, next) => {
-    const { volunteerId,EduId } = req.params;
+    const { volunteerId, EduId } = req.params;
     const {
       universityId,
       facultyName,
@@ -308,12 +303,12 @@ router.patch(
       location,
       grade,
     } = req.body;
-    const volunteer=await Volunteer.findById(volunteerId)
+    const volunteer = await Volunteer.findById(volunteerId);
     const eduIndex = volunteer.educations.findIndex((edu) => edu === EduId);
-    console.log("index",eduIndex)
-    if (eduIndex > -1) {        
+    console.log("index", eduIndex);
+    if (eduIndex > -1) {
       const updatedEducation = await Education.findByIdAndUpdate(
-        EduId ,
+        EduId,
         {
           universityId,
           facultyName,
@@ -326,15 +321,12 @@ router.patch(
           new: true,
           omitUndefined: true,
         }
-      
       );
-      console.log("update",updatedEducation)
-    // await Volunteer.save();
-    await updatedEducation.save();
-    res.json({ updatedEducation });
-
+      console.log("update", updatedEducation);
+      // await Volunteer.save();
+      await updatedEducation.save();
+      res.json({ updatedEducation });
     }
-    
   }
 );
 
@@ -419,7 +411,7 @@ router.delete(
       await Education.findByIdAndDelete(EduId);
       console.log(volunteer);
       res.json({ volunteer });
-     } catch (err) {
+    } catch (err) {
       console.error(err);
       next(err);
     }
