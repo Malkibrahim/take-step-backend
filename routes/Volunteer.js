@@ -11,6 +11,32 @@ require("express-async-errors");
 require("dotenv").config();
 const router = express.Router();
 const { check } = require("express-validator");
+//-----------multer - image upload--------------
+const multer = require("multer");
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "uploads/");
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + file.originalname);
+  },
+});
+const fileFilter = (req, file, cb) => {
+  if (
+    file.mimetype === "image/jpeg" ||
+    file.mimetype === "image/jpg" ||
+    file.mimetype === "image/png"
+  ) {
+    cb(null, true);
+  } else {
+    cb(null, false);
+  }
+};
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 1024 * 1024 * 5 },
+  fileFilter: fileFilter,
+});
 
 //----------------------get all Volunteers-----------------------------//
 router.get("/getAllVolunteers", async (req, res, next) => {
@@ -26,41 +52,49 @@ router.get("/:id", async (req, res, next) => {
     .populate("educations")
     .populate("skills");
   res.json(user);
-  console.log("user is",user)
+  console.log("user is", user);
 });
 //---------------------------UpdateUser---------------------------//
-router.patch("/Edit/:id", authenticationMiddleware, async (req, res, next) => {
-  id = req.user.id;
-  const {
-    password,
-    firstName,
-    lastName,
-    country,
-    email,
-    jobTitle,
-    description,
-  } = req.body;
-  const user = await Volunteer.findByIdAndUpdate(
-    id,
-    {
-      $set: {
-        password,
-        firstName,
-        lastName,
-        country,
-        email,
-        jobTitle,
-        description,
+router.patch(
+  "/Edit/:id",
+  authenticationMiddleware,
+  upload.single("imgUrl"),
+  async (req, res, next) => {
+    console.log(req.file);
+    const imgUrl = req.file.path;
+    id = req.user.id;
+    const {
+      password,
+      firstName,
+      lastName,
+      country,
+      email,
+      jobTitle,
+      description,
+    } = req.body;
+    const user = await Volunteer.findByIdAndUpdate(
+      id,
+      {
+        $set: {
+          password,
+          firstName,
+          lastName,
+          country,
+          email,
+          jobTitle,
+          description,
+          imgUrl,
+        },
       },
-    },
-    {
-      new: true,
-      runValidators: true,
-      omitUndefined: true,
-    }
-  ).populate("country");
-  res.status(200).json(user);
-});
+      {
+        new: true,
+        runValidators: true,
+        omitUndefined: true,
+      }
+    ).populate("country");
+    res.status(200).json(user);
+  }
+);
 ///-----------------------Register-----------------//
 router.post(
   "/register",
@@ -288,7 +322,6 @@ router.post(
     });
   }
 );
-
 /////-----------------------------edit Education--------------------------///
 router.patch(
   "/EditEducation/:volunteerId/:EduId",
@@ -368,7 +401,6 @@ router.get("/getEduById/:id", async (req, res, next) => {
     next(err);
   }
 });
-
 //---------------------------------------------------------------------------------------------------------------//
 //////////////////////////////////////////////DELETE EDUCATION//////////////////////////
 // router.delete("/:id", async (req, res, next) => {
@@ -378,7 +410,6 @@ router.get("/getEduById/:id", async (req, res, next) => {
 //   await res.json({ deleted });
 //   // res.json({message : "delete education"});
 // });
-
 ///----------------------/delete education  /-----------------------------////////////
 router.delete(
   "/deleteEdu/:id",
